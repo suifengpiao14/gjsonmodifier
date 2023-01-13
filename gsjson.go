@@ -49,7 +49,8 @@ func init() {
 		}
 		return json
 	})
-	gjson.AddModifier("tonum", tonum) // 列转换为数字,可用于字符串数字排序
+	gjson.AddModifier("tonum", tonum)       // 列转换为数字,可用于字符串数字排序
+	gjson.AddModifier("tostring", tostring) // 列转换为数字,可用于字符串数字排序
 	gjson.AddModifier("combine", combine)
 
 	gjson.AddModifier("leftJoin", leftJoin)
@@ -240,13 +241,24 @@ func index(jsonStr, arg string) string {
 	return outStr
 }
 
-func tonum(json string, arg string) (num string) {
-
-	num = strings.Trim(json, `'"`)
+func tonum(value string, arg string) (num string) {
+	num = strings.Trim(value, `'"`)
 	if num == "" {
 		num = "0"
 	}
 	return num
+}
+
+func tostring(value string, arg string) (str string) {
+	if value == "" {
+		return ""
+	}
+	c := value[0]
+	if c == byte('\'') || c == byte('"') {
+		return value
+	}
+	str = fmt.Sprintf("\"%s\"", value) // todo 优化，字符串内包含'\"情况
+	return str
 }
 
 func unique(json string, arg string) (outStr string) {
