@@ -1,4 +1,4 @@
-package gsjsonmodifier
+package gjsonmodifier
 
 import (
 	"encoding/json"

@@ -1,9 +1,10 @@
-package gsjsonmodifier
+package gjsonmodifier
 
 import (
 	"fmt"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/tidwall/gjson"
 )
 
@@ -80,5 +81,32 @@ func TestMulti(t *testing.T) {
 	v2 := gjson.Get(jsonstr2, path).String()
 	fmt.Println(v)
 	fmt.Println(v2)
+
+}
+
+func TestTostring(t *testing.T) {
+	t.Run("value empty", func(t *testing.T) {
+		value := ""
+		out := tostring(value, "")
+		assert.Equal(t, "", out)
+	})
+	t.Run("value string", func(t *testing.T) {
+		value := "ok"
+		out := tostring(value, "")
+		assert.Equal(t, "", out)
+	})
+	t.Run("value number", func(t *testing.T) {
+		value := "1.2"
+		out := tostring(value, "")
+		assert.Equal(t, "\"1.2\"", out)
+	})
+
+	t.Run("complex ", func(t *testing.T) {
+		value := "{\"input\":{\"pageIndex\":0,\"pageSize\":10},\"PaginateTotalOut\":11,\"PaginateOut\":[{\"Fcreate_time\":\"2022-07-21 18:34:35\",\"Fid\":\"11\",\"Fidentify\":\"fghfg\",\"Fmerchant_id\":\"44\",\"Fmerchant_name\":\"商户名称\",\"Foperate_name\":\"彭政\",\"Fstatus\":\"1\",\"Fstore_id\":\"12\",\"Fstore_name\":\"店铺名称\",\"Fupdate_time\":\"2022-07-21 18:34:35\"},{\"Fcreate_time\":\"2022-07-20 18:51:58\",\"Fid\":\"10\",\"Fidentify\":\"100000\",\"Fmerchant_id\":\"100000\",\"Fmerchant_name\":\"商户名称100000\",\"Foperate_name\":\"彭政100000\",\"Fstatus\":\"1\",\"Fstore_id\":\"1211\",\"Fstore_name\":\"店铺名称100000\",\"Fupdate_time\":\"2022-07-21 18:34:11\"},{\"Fcreate_time\":\"2022-07-20 10:22:30\",\"Fid\":\"9\",\"Fidentify\":\"fghfg\",\"Fmerchant_id\":\"44\",\"Fmerchant_name\":\"商户名称\",\"Foperate_name\":\"彭政\",\"Fstatus\":\"1\",\"Fstore_id\":\"12\",\"Fstore_name\":\"店铺名称\",\"Fupdate_time\":\"2022-07-20 10:22:30\"},{\"Fcreate_time\":\"2022-06-06 10:48:15\",\"Fid\":\"8\",\"Fidentify\":\"222\",\"Fmerchant_id\":\"222\",\"Fmerchant_name\":\"222\",\"Foperate_name\":\"pengkuan\",\"Fstatus\":\"1\",\"Fstore_id\":\"222\",\"Fstore_name\":\"222\",\"Fupdate_time\":\"2022-06-06 10:48:45\"},{\"Fcreate_time\":\"2022-06-06 10:47:48\",\"Fid\":\"7\",\"Fidentify\":\"1111\",\"Fmerchant_id\":\"1111\",\"Fmerchant_name\":\"1111\",\"Foperate_name\":\"pengkuan\",\"Fstatus\":\"2\",\"Fstore_id\":\"1111\",\"Fstore_name\":\"1111\",\"Fupdate_time\":\"2022-06-06 10:47:48\"},{\"Fcreate_time\":\"2022-06-06 10:44:29\",\"Fid\":\"6\",\"Fidentify\":\"312321\",\"Fmerchant_id\":\"321321\",\"Fmerchant_name\":\"321321\",\"Foperate_name\":\"pengkuan\",\"Fstatus\":\"2\",\"Fstore_id\":\"3213213\",\"Fstore_name\":\"12321321\",\"Fupdate_time\":\"2022-06-06 10:48:40\"},{\"Fcreate_time\":\"2022-06-02 14:41:31\",\"Fid\":\"5\",\"Fidentify\":\"abced123f\",\"Fmerchant_id\":\"44\",\"Fmerchant_name\":\"商户名称\",\"Foperate_name\":\"彭政\",\"Fstatus\":\"1\",\"Fstore_id\":\"12\",\"Fstore_name\":\"店铺名称\",\"Fupdate_time\":\"2022-06-06 10:48:27\"},{\"Fcreate_time\":\"2022-06-01 18:14:20\",\"Fid\":\"4\",\"Fidentify\":\"fghfg\",\"Fmerchant_id\":\"44\",\"Fmerchant_name\":\"商户名称\",\"Foperate_name\":\"彭政\",\"Fstatus\":\"2\",\"Fstore_id\":\"12\",\"Fstore_name\":\"店铺名称\",\"Fupdate_time\":\"2022-06-06 10:48:51\"},{\"Fcreate_time\":\"2022-06-01 18:13:50\",\"Fid\":\"3\",\"Fidentify\":\"abced123f\",\"Fmerchant_id\":\"44\",\"Fmerchant_name\":\"商户名称\",\"Foperate_name\":\"彭政\",\"Fstatus\":\"1\",\"Fstore_id\":\"12\",\"Fstore_name\":\"店铺名称\",\"Fupdate_time\":\"2022-06-01 18:13:50\"},{\"Fcreate_time\":\"2022-06-01 17:32:17\",\"Fid\":\"2\",\"Fidentify\":\"15963\",\"Fmerchant_id\":\"1\",\"Fmerchant_name\":\"测试2\",\"Foperate_name\":\"彭政\",\"Fstatus\":\"2\",\"Fstore_id\":\"3\",\"Fstore_name\":\"测试门店2\",\"Fupdate_time\":\"2022-06-01 18:06:01\"}]}"
+		path := "{output:{items:{updateTime:PaginateOut.#.Fupdate_time.@tostring,id:PaginateOut.#.Fid.@tostring,identify:PaginateOut.#.Fidentify.@tostring,status:PaginateOut.#.Fstatus|tonum,createTime:PaginateOut.#.Fcreate_time.@tostring,storeName:PaginateOut.#.Fstore_name.@tostring,merchantId:PaginateOut.#.Fmerchant_id.@tostring,merchantName:PaginateOut.#.Fmerchant_name.@tostring,operateName:PaginateOut.#.Foperate_name.@tostring,storeId:PaginateOut.#.Fstore_id.@tostring}|@group,pageInfo:{pageIndex:input.pageIndex.@tostring,pageSize:input.pageSize.@tostring,total:PaginateTotalOut.@tostring}}}"
+		result := gjson.Get(value, path).String()
+		fmt.Println(result)
+
+	})
 
 }
