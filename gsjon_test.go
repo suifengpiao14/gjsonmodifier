@@ -38,6 +38,27 @@ func TestLeftJoin(t *testing.T) {
 	fmt.Println(out)
 
 }
+func TestLeftJoin2(t *testing.T) {
+
+	PaginateOut := `[{"Fauto_create_time":"2023-01-17 17:33:53","Fauto_update_time":"2023-01-17 17:34:08","Fdetect_sn_id":"15454","Fend_node":"201","Fend_node_time":"2023-01-17 10:35:10","Fid":"2","Fop_id":"12","Fop_name":"张三","Forder_id":"16688102","Fsound_dur_time":"10","Fsound_record_id":"10001055","Fsound_url":"http://s1-1251010403.file.myqcloud.com/xian_yu_x_z/order/order_record/18170456-01171722.mp3","Fstart_node":"0","Fstart_node_time":"2023-01-17 10:35:00","Fvalid":"1"},{"Fauto_create_time":"2023-01-17 14:05:56","Fauto_update_time":"2023-01-1717:31:06","Fdetect_sn_id":"15454","Fend_node":"201","Fend_node_time":"2023-01-17 10:35:10","Fid":"1","Fop_id":"4234","Fop_name":"13528768996","Forder_id":"16688102","Fsound_dur_time":"10","Fsound_record_id":"10001054","Fsound_url":"http://s1-1251010403.file.myqcloud.com/xian_yu_x_z/order/order_record/18170456-01171722.mp3","Fstart_node":"0","Fstart_node_time":"2023-01-17 10:35:00","Fvalid":"1"}]`
+
+	startNodeTitle := `[{"Fsound_node_id":"0","startNodeTitle":"无"},{"Fsound_node_id":"101","startNodeTitle":"手动建单"},{"Fsound_node_id":"102","startNodeTitle":"到店验机"},{"Fsound_node_id":"103","startNodeTitle":"开始质检"},{"Fsound_node_id":"104","startNodeTitle":"重新估价"},{"Fsound_node_id":"105","startNodeTitle":"继续付款"},{"Fsound_node_id":"201","startNodeTitle":"订单完成（确定）"},{"Fsound_node_id":"202","startNodeTitle":"订单关闭"},{"Fsound_node_id":"203","startNodeTitle":"自动关闭"},{"Fsound_node_id":"204","startNodeTitle":"返回首页"}]`
+	endNodeTitle := `[{"Fsound_node_id":"0","endNodeTitle":"无"},{"Fsound_node_id":"101","endNodeTitle":"手动建单"},{"Fsound_node_id":"102","endNodeTitle":"到店验机"},{"Fsound_node_id":"103","endNodeTitle":"开始质检"},{"Fsound_node_id":"104","endNodeTitle":"重新估价"},{"Fsound_node_id":"105","endNodeTitle":"继续付款"},{"Fsound_node_id":"201","endNodeTitle":"订单完成（确定）"},{"Fsound_node_id":"202","endNodeTitle":"订单关闭"},{"Fsound_node_id":"203","endNodeTitle":"自动关闭"},{"Fsound_node_id":"204","endNodeTitle":"返回首页"}]`
+
+	jsonstr := fmt.Sprintf("[%s,%s,%s]", PaginateOut, startNodeTitle, endNodeTitle)
+	path := "@leftJoin:[@this.0.#.Fstart_node,@this.1.#.Fsound_node_id,@this.0.#.Fend_node,@this.2.#.Fsound_node_id]"
+	out := gjson.Get(jsonstr, path).String()
+	fmt.Println(out)
+
+}
+
+func TestRename(t *testing.T) {
+	jsonstr := `[{"Fsound_node_id":"0","startNodeTitle":"无"},{"Fsound_node_id":"101","startNodeTitle":"手动建单"},{"Fsound_node_id":"102","startNodeTitle":"到店验机"},{"Fsound_node_id":"103","startNodeTitle":"开始质检"},{"Fsound_node_id":"104","startNodeTitle":"重新估价"},{"Fsound_node_id":"105","startNodeTitle":"继续付款"},{"Fsound_node_id":"201","startNodeTitle":"订单完成（确定）"},{"Fsound_node_id":"202","startNodeTitle":"订单关闭"},{"Fsound_node_id":"203","startNodeTitle":"自动关闭"},{"Fsound_node_id":"204","startNodeTitle":"返回首页"}]`
+	path := "{Fsound_node_id:@this.#.Fsound_node_id,endNodeTitle:@this.#.startNodeTitle}|@group"
+	out := gjson.Get(jsonstr, path).String()
+	fmt.Println(out)
+
+}
 
 func TestIndex(t *testing.T) {
 	jsonstr := `
