@@ -55,9 +55,11 @@ func init() {
 
 	gjson.AddModifier("leftJoin", leftJoin)
 	gjson.AddModifier("index", index)
-	gjson.AddModifier("concat", concat) //将二维数组按行合并成一维数组,可用于多列索引
-	gjson.AddModifier("unique", unique) //数组去重
-	gjson.AddModifier("multi", multi)   //两数想成
+	gjson.AddModifier("concat", concat)     //将二维数组按行合并成一维数组,可用于多列索引
+	gjson.AddModifier("unique", unique)     //数组去重
+	gjson.AddModifier("multi", multi)       //两数想成
+	gjson.AddModifier("replace", replace)   //替换
+	gjson.AddModifier("basePath", basePath) //获取基本路径
 }
 
 func combine(jsonStr, arg string) string {
@@ -333,6 +335,25 @@ func concat(jsonStr, arg string) string {
 	out := string(b)
 	return out
 
+}
+
+func replace(jsonStr string, arg string) (out string) {
+	arr := strings.Split(strings.Trim(arg, `"`), "-")
+	replacer := strings.NewReplacer(arr...)
+	out = replacer.Replace(jsonStr)
+	return out
+}
+
+func basePath(jsonStr string, arg string) (out string) {
+	out = jsonStr
+	lastDotIndex := strings.LastIndex(jsonStr, ".")
+	if lastDotIndex > -1 {
+		out = jsonStr[lastDotIndex+1:]
+		if out[len(out)-1] == '"' { // jsonStr 带有"",需要补齐开头的"
+			out = fmt.Sprintf(`"%s`, out)
+		}
+	}
+	return out
 }
 
 // concatColumn 合并一行中的所有数据，复合索引使用
