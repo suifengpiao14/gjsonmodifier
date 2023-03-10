@@ -58,6 +58,7 @@ func init() {
 	gjson.AddModifier("concat", concat) //将二维数组按行合并成一维数组,可用于多列索引
 	gjson.AddModifier("unique", unique) //数组去重
 	gjson.AddModifier("multi", multi)   //两数想成
+	gjson.AddModifier("in", in)         //值在范围内
 }
 
 func combine(jsonStr, arg string) string {
@@ -313,6 +314,17 @@ func multi(json string, arg string) (v string) {
 	return v
 }
 
+func in(jsonStr string, arg string) (out string) {
+	input := gjson.Parse(jsonStr).String()
+	values := strings.Split(arg, ",")
+	for _, value := range values {
+		if input == value {
+			return jsonStr
+		}
+	}
+	return ""
+}
+
 func orderBy(json string, arg string) (num string) {
 	num = strings.Trim(json, `'"`)
 	return num
@@ -472,4 +484,10 @@ func parseSubSelectors(path string) (sels []subSelector, out string, ok bool) {
 		}
 	}
 	return
+}
+
+//TestQuery 提供测试语法函数
+func TestQuery(data string, query string) (out string) {
+	out = gjson.Get(data, query).String()
+	return out
 }
