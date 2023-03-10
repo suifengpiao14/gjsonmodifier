@@ -317,10 +317,11 @@ func multi(json string, arg string) (v string) {
 }
 
 func in(jsonStr string, arg string) (out string) {
-	input := gjson.Parse(jsonStr).String()
+	parsed := gjson.Parse(jsonStr).String()
+	arg = strings.Trim(arg, `"`)
 	values := strings.Split(arg, ",")
 	for _, value := range values {
-		if input == value {
+		if parsed == value {
 			return jsonStr
 		}
 	}
