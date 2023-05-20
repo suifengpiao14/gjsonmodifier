@@ -172,4 +172,16 @@ func TestEval(t *testing.T) {
 		fmt.Println(out)
 	})
 
+	t.Run("inArray", func(t *testing.T) {
+		path := `#(fullname.@basePath.@eval:(inArray(value,["id"]))==true)#`
+		out := TestQuery(data, path)
+		fmt.Println(out)
+	})
+
+	t.Run("collection", func(t *testing.T) {
+		path := `#(fullname.@basePath.@eval:(collection.any(["id","name"],func(index,item){return value==item}))==true)#`
+		out := TestQuery(data, path)
+		fmt.Println(out)
+	})
+
 }

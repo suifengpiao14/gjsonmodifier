@@ -8,6 +8,7 @@ import (
 	"unsafe"
 
 	"github.com/d5/tengo/v2"
+	"github.com/d5/tengo/v2/stdlib"
 	"github.com/pkg/errors"
 	"github.com/spf13/cast"
 	"github.com/tidwall/gjson"
@@ -370,7 +371,7 @@ func eval(jsonStr string, arg string) (out string) {
 			arg = arg[1 : l-1]
 		}
 	}
-	res, err := tengo.Eval(context.Background(),
+	res, err := tengoEval(context.Background(),
 		arg,
 		parameters,
 	)
@@ -382,6 +383,46 @@ func eval(jsonStr string, arg string) (out string) {
 		out = fmt.Sprintf(`"%s"`, out) // 增加引号
 	}
 	return out
+}
+
+func tengoEval(ctx context.Context, expr string, params map[string]interface{}) (interface{}, error) {
+
+	expr = strings.TrimSpace(expr)
+	if expr == "" {
+		return nil, fmt.Errorf("empty expression")
+	}
+	var code = `
+	    times := import("times")
+		collection := import("enum")
+		text := import("text")
+		inArray := func(val,seq) {
+			for x in seq { 
+				if val==x{
+					return true
+				}
+			}
+			return false
+		}
+		__res__ := (%s)
+	`
+	code = fmt.Sprintf(code, expr)
+
+	script := tengo.NewScript([]byte(code))
+	script.EnableFileImport(true)
+	mods := stdlib.GetModuleMap("times", "enum", "text")
+	script.SetImports(mods)
+	for pk, pv := range params {
+		err := script.Add(pk, pv)
+		if err != nil {
+			return nil, fmt.Errorf("script add: %w", err)
+		}
+	}
+	compiled, err := script.RunContext(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("script run: %w", err)
+	}
+	return compiled.Get("__res__").Value(), nil
+
 }
 
 func basePath(jsonStr string, arg string) (out string) {
