@@ -158,16 +158,16 @@ func TestTestQuery(t *testing.T) {
 	})
 }
 
-func TestScript(t *testing.T) {
+func TestEval(t *testing.T) {
 
 	data := `[{"fullname":"items[].id"},{"fullname":"items[].name"}]`
 	t.Run("simple", func(t *testing.T) {
-		path := `#.fullname.@basePath.@script:value == "id" ? "是":"否"`
+		path := `#.fullname.@basePath.@eval:value == "id" ? "是":"否"`
 		out := TestQuery(data, path)
 		fmt.Println(out)
 	})
 	t.Run("filter", func(t *testing.T) {
-		path := `#(fullname.@basePath.@script:(value=="id"?"true":"false")==true)#`
+		path := `#(fullname.@basePath.@eval:(value!="name"&&value!="updated")==true)#`
 		out := TestQuery(data, path)
 		fmt.Println(out)
 	})

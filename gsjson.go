@@ -64,7 +64,7 @@ func init() {
 	gjson.AddModifier("in", in)             //值在范围内
 	gjson.AddModifier("replace", replace)   //替换
 	gjson.AddModifier("basePath", basePath) //获取基本路径
-	gjson.AddModifier("script", script)     //script 脚本
+	gjson.AddModifier("eval", eval)         //eval 脚本
 }
 
 func combine(jsonStr, arg string) string {
@@ -360,7 +360,7 @@ func replace(jsonStr string, arg string) (out string) {
 	return out
 }
 
-func script(jsonStr string, arg string) (out string) {
+func eval(jsonStr string, arg string) (out string) {
 	parameters := map[string]interface{}{
 		"value": strings.Trim(jsonStr, `'"`),
 	}
@@ -378,6 +378,9 @@ func script(jsonStr string, arg string) (out string) {
 		panic(err)
 	}
 	out = cast.ToString(res)
+	if _, ok := res.(string); ok {
+		out = fmt.Sprintf(`"%s"`, out) // 增加引号
+	}
 	return out
 }
 
