@@ -3,9 +3,9 @@ module github.com/suifengpiao14/gjsonmodifier
 go 1.18
 
 require (
-	github.com/d5/tengo v1.24.8
 	github.com/d5/tengo/v2 v2.13.0
 	github.com/pkg/errors v0.9.1
+	github.com/spf13/cast v1.5.1
 	github.com/stretchr/testify v1.8.1
 	github.com/tidwall/gjson v1.14.4
 	github.com/tidwall/sjson v1.2.5

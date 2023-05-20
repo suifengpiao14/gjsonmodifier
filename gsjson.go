@@ -9,6 +9,7 @@ import (
 
 	"github.com/d5/tengo/v2"
 	"github.com/pkg/errors"
+	"github.com/spf13/cast"
 	"github.com/tidwall/gjson"
 	"github.com/tidwall/sjson"
 )
@@ -370,7 +371,7 @@ func script(jsonStr string, arg string) (out string) {
 	if err != nil {
 		panic(err)
 	}
-	out = fmt.Sprintf(`"%s"`, res)
+	out = cast.ToString(res)
 	return out
 }
 
