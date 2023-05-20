@@ -364,6 +364,12 @@ func script(jsonStr string, arg string) (out string) {
 	parameters := map[string]interface{}{
 		"value": strings.Trim(jsonStr, `'"`),
 	}
+	l := len(arg)
+	if l > 1 {
+		if arg[0] == '(' && arg[l-1] == ')' {
+			arg = arg[1 : l-1]
+		}
+	}
 	res, err := tengo.Eval(context.Background(),
 		arg,
 		parameters,

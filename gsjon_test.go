@@ -167,7 +167,7 @@ func TestScript(t *testing.T) {
 		fmt.Println(out)
 	})
 	t.Run("filter", func(t *testing.T) {
-		path := `#(fullname.@basePath.@script:(value == "id" ? true:false)==true)#`
+		path := `#(fullname.@basePath.@script:(value=="id"?"true":"false")==true)#`
 		out := TestQuery(data, path)
 		fmt.Println(out)
 	})
