@@ -392,6 +392,7 @@ func tengoEval(ctx context.Context, expr string, params map[string]interface{}) 
 		return nil, fmt.Errorf("empty expression")
 	}
 	var code = `
+		fmt := import("fmt")
 	    times := import("times")
 		collection := import("enum")
 		text := import("text")
@@ -409,7 +410,7 @@ func tengoEval(ctx context.Context, expr string, params map[string]interface{}) 
 
 	script := tengo.NewScript([]byte(code))
 	script.EnableFileImport(true)
-	mods := stdlib.GetModuleMap("times", "enum", "text")
+	mods := stdlib.GetModuleMap("times", "enum", "text", "fmt")
 	script.SetImports(mods)
 	for pk, pv := range params {
 		err := script.Add(pk, pv)
