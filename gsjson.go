@@ -1,11 +1,13 @@
 package gjsonmodifier
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"strings"
 	"unsafe"
 
+	"github.com/d5/tengo/v2"
 	"github.com/pkg/errors"
 	"github.com/tidwall/gjson"
 	"github.com/tidwall/sjson"
@@ -61,6 +63,7 @@ func init() {
 	gjson.AddModifier("in", in)             //值在范围内
 	gjson.AddModifier("replace", replace)   //替换
 	gjson.AddModifier("basePath", basePath) //获取基本路径
+	gjson.AddModifier("script", script)     //script 脚本
 }
 
 func combine(jsonStr, arg string) string {
@@ -318,7 +321,6 @@ func multi(json string, arg string) (v string) {
 
 func in(jsonStr string, arg string) (out string) {
 	parsed := gjson.Parse(jsonStr).String()
-	arg = strings.Trim(arg, `"`)
 	values := strings.Split(arg, ",")
 	for _, value := range values {
 		if parsed == value {
@@ -351,9 +353,24 @@ func concat(jsonStr, arg string) string {
 }
 
 func replace(jsonStr string, arg string) (out string) {
-	arr := strings.Split(strings.Trim(arg, `"`), "-")
+	arr := strings.Split(arg, "-")
 	replacer := strings.NewReplacer(arr...)
 	out = replacer.Replace(jsonStr)
+	return out
+}
+
+func script(jsonStr string, arg string) (out string) {
+	parameters := map[string]interface{}{
+		"value": strings.Trim(jsonStr, `'"`),
+	}
+	res, err := tengo.Eval(context.Background(),
+		arg,
+		parameters,
+	)
+	if err != nil {
+		panic(err)
+	}
+	out = fmt.Sprintf(`"%s"`, res)
 	return out
 }
 
@@ -508,7 +525,7 @@ func parseSubSelectors(path string) (sels []subSelector, out string, ok bool) {
 	return
 }
 
-//TestQuery 提供测试语法函数
+// TestQuery 提供测试语法函数
 func TestQuery(data string, query string) (out string) {
 	out = gjson.Get(data, query).String()
 	return out

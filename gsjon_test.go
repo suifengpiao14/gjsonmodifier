@@ -157,3 +157,12 @@ func TestTestQuery(t *testing.T) {
 		fmt.Println(out)
 	})
 }
+
+func TestScript(t *testing.T) {
+	data := `[{"fullname":"items[].id"},{"fullname":"items[].name"}]`
+	//path := `0.fullname.@basePath.@tostring`
+	path := `#.fullname.@basePath.@script:value == "id" ? "是":"否"`
+	out := TestQuery(data, path)
+	fmt.Println(out)
+
+}
