@@ -379,9 +379,7 @@ func eval(jsonStr string, arg string) (out string) {
 		panic(err)
 	}
 	out = cast.ToString(res)
-	if _, ok := res.(string); ok {
-		out = fmt.Sprintf(`"%s"`, out) // 增加引号
-	}
+	out = fmt.Sprintf(`"%s"`, out) // 增加引号,确保全部返回字符串类型
 	return out
 }
 
