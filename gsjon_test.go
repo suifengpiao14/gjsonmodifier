@@ -183,7 +183,7 @@ func TestEval(t *testing.T) {
 		fmt.Println(out)
 	})
 	t.Run("kvMap", func(t *testing.T) {
-		path := `#.fullname.@basePath.@eval:(kvMap({"id":"id1"}))`
+		path := `#.fullname.@basePath.@eval:(kvMap({"id":"id1"},undefined))`
 		out := TestQuery(data, path)
 		fmt.Println(out)
 	})

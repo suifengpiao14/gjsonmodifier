@@ -413,9 +413,12 @@ func tengoEval(ctx context.Context, expr string, params map[string]interface{}) 
 			}
 			return true
 		}
-		kvMap:=func(kv){
+		kvMap:=func(kv,default){
 			v:=kv[value]
-			return v
+			if v!=undefined{
+				return v
+			}
+				return default
 		}
 		__res__ := (%s)
 	`
