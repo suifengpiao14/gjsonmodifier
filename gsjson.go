@@ -396,13 +396,26 @@ func tengoEval(ctx context.Context, expr string, params map[string]interface{}) 
 	    times := import("times")
 		collection := import("enum")
 		text := import("text")
-		inArray := func(val,seq) {
+		inArray:= func(seq) {
 			for x in seq { 
-				if val==x{
+				if value==x{
 					return true
 				}
 			}
-			return false
+			return 
+		}
+		
+		notInArray:= func(seq) {
+			for x in seq { 
+				if value==x{
+					return 
+				}
+			}
+			return true
+		}
+		kvMap:=func(kv){
+			v:=kv[value]
+			return v
 		}
 		__res__ := (%s)
 	`

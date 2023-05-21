@@ -173,7 +173,17 @@ func TestEval(t *testing.T) {
 	})
 
 	t.Run("inArray", func(t *testing.T) {
-		path := `#(fullname.@basePath.@eval:(inArray(value,["id"]))==true)#`
+		path := `#(fullname.@basePath.@eval:(inArray(["name"])))#`
+		out := TestQuery(data, path)
+		fmt.Println(out)
+	})
+	t.Run("notInArray", func(t *testing.T) {
+		path := `#(fullname.@basePath.@eval:(notInArray(["id"])))#`
+		out := TestQuery(data, path)
+		fmt.Println(out)
+	})
+	t.Run("kvMap", func(t *testing.T) {
+		path := `#.fullname.@basePath.@eval:(kvMap({"id":"id1"}))`
 		out := TestQuery(data, path)
 		fmt.Println(out)
 	})
