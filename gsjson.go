@@ -378,6 +378,9 @@ func eval(jsonStr string, arg string) (out string) {
 	if err != nil {
 		panic(err)
 	}
+	if res == nil { // 脚本返回空,直接返回空数据
+		return out
+	}
 	out = cast.ToString(res)
 	out = fmt.Sprintf(`"%s"`, out) // 增加引号,确保全部返回字符串类型
 	return out
