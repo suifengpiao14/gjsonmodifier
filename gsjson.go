@@ -59,13 +59,14 @@ func init() {
 
 	gjson.AddModifier("leftJoin", leftJoin)
 	gjson.AddModifier("index", index)
-	gjson.AddModifier("concat", concat)     //将二维数组按行合并成一维数组,可用于多列索引
-	gjson.AddModifier("unique", unique)     //数组去重
-	gjson.AddModifier("multi", multi)       //两数想成
-	gjson.AddModifier("in", in)             //值在范围内
-	gjson.AddModifier("replace", replace)   //替换
-	gjson.AddModifier("basePath", basePath) //获取基本路径
-	gjson.AddModifier("eval", eval)         //eval 脚本
+	gjson.AddModifier("concat", concat)                       //将二维数组按行合并成一维数组,可用于多列索引
+	gjson.AddModifier("unique", unique)                       //数组去重
+	gjson.AddModifier("multi", multi)                         //两数想成
+	gjson.AddModifier("in", in)                               //值在范围内
+	gjson.AddModifier("replace", replace)                     //替换
+	gjson.AddModifier("basePath", basePath)                   //获取基本路径
+	gjson.AddModifier("addBasePathPrefix", addBasePathPrefix) //基本路径前增加前缀
+	gjson.AddModifier("eval", eval)                           //eval 脚本
 }
 
 func combine(jsonStr, arg string) string {
@@ -361,33 +362,54 @@ func replace(jsonStr string, arg string) (out string) {
 	return out
 }
 
-func eval(jsonStr string, arg string) (out string) {
-	parameters := map[string]interface{}{
-		"value": strings.Trim(jsonStr, `'"`),
+//_trimBracket 删除开始结尾的(),涉及脚本函数有用
+func _trimBracket(s string) (out string) {
+	s = strings.TrimSpace(s)
+	l := len(s)
+	if l > 1 && s[0] == '(' && s[l-1] == ')' {
+		s = s[1 : l-1]
 	}
-	l := len(arg)
-	if l > 1 {
-		if arg[0] == '(' && arg[l-1] == ')' {
-			arg = arg[1 : l-1]
-		}
+	return s
+}
+
+//_trimBracket 删除开始结尾的""",gjson modifer 入参 jsonStr 字符串时，会增加"",所以入参需要剔除
+func _trimQuotation(s string) (out string) {
+	s = strings.TrimSpace(s)
+	l := len(s)
+	if l > 1 && s[0] == '"' && s[l-1] == '"' {
+		s = s[1 : l-1]
 	}
-	res, err := tengoEval(context.Background(),
-		arg,
-		parameters,
-	)
-	if err != nil {
-		panic(err)
+	return s
+}
+
+func _formatOut(i interface{}) (out string) {
+	out = cast.ToString(i)
+	if _, ok := i.(string); ok {
+		out = fmt.Sprintf(`"%s"`, out)
 	}
-	if res == nil { // 脚本返回空,直接返回空数据
-		return out
-	}
-	out = cast.ToString(res)
-	out = fmt.Sprintf(`"%s"`, out) // 增加引号,确保全部返回字符串类型
 	return out
 }
 
-func tengoEval(ctx context.Context, expr string, params map[string]interface{}) (interface{}, error) {
+func eval(jsonStr string, arg string) (out string) {
+	res, err := tengoEval(jsonStr, arg)
+	if err != nil {
+		panic(err)
+	}
+	bol, ok := res.(bool)
+	if ok && !bol { // 布尔类型，直接返回空字符串，达到false 效果
+		return out
+	}
+	out = _formatOut(res)
+	return out
+}
 
+func tengoEval(value string, expr string) (interface{}, error) {
+	value = _trimQuotation(value)
+	value = _trimBracket(value)
+	parameters := map[string]interface{}{
+		"value": value,
+	}
+	expr = _trimBracket(expr)
 	expr = strings.TrimSpace(expr)
 	if expr == "" {
 		return nil, fmt.Errorf("empty expression")
@@ -429,13 +451,13 @@ func tengoEval(ctx context.Context, expr string, params map[string]interface{}) 
 	script.EnableFileImport(true)
 	mods := stdlib.GetModuleMap("times", "enum", "text", "fmt")
 	script.SetImports(mods)
-	for pk, pv := range params {
+	for pk, pv := range parameters {
 		err := script.Add(pk, pv)
 		if err != nil {
 			return nil, fmt.Errorf("script add: %w", err)
 		}
 	}
-	compiled, err := script.RunContext(ctx)
+	compiled, err := script.RunContext(context.Background())
 	if err != nil {
 		return nil, fmt.Errorf("script run: %w", err)
 	}
@@ -444,14 +466,36 @@ func tengoEval(ctx context.Context, expr string, params map[string]interface{}) 
 }
 
 func basePath(jsonStr string, arg string) (out string) {
-	out = jsonStr
+	out = _trimQuotation(jsonStr)
+	lastDotIndex := strings.LastIndex(out, ".")
+	if lastDotIndex > -1 {
+		out = out[lastDotIndex+1:]
+	}
+	out = _formatOut(out)
+	return out
+}
+
+// 基础名称增加前缀(在实体名称重复时，增加实体名作为前缀的需求非常普遍,支持动态表达式计算前缀)
+func addBasePathPrefix(jsonStr string, arg string) (out string) {
+	jsonStr = _trimQuotation(jsonStr)
+	befor, base := "", jsonStr
 	lastDotIndex := strings.LastIndex(jsonStr, ".")
 	if lastDotIndex > -1 {
-		out = jsonStr[lastDotIndex+1:]
-		if out[len(out)-1] == '"' { // jsonStr 带有"",需要补齐开头的"
-			out = fmt.Sprintf(`"%s`, out)
-		}
+		befor = jsonStr[0 : lastDotIndex+1]
+		base = jsonStr[lastDotIndex+1:]
 	}
+	prefix := strings.TrimSpace(arg)
+	prefixInterface, err := tengoEval(base, prefix)
+	if err != nil {
+		panic(err)
+	}
+	prefix = cast.ToString(prefixInterface)
+	if prefix != "" && base != "" {
+		base = fmt.Sprintf("%s%s", strings.ToUpper(base[0:1]), base[1:])
+	}
+
+	out = fmt.Sprintf("%s%s%s", befor, prefix, base)
+	out = _formatOut(out)
 	return out
 }
 
