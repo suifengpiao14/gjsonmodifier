@@ -65,7 +65,7 @@ func init() {
 	gjson.AddModifier("in", in)                               //值在范围内
 	gjson.AddModifier("replace", replace)                     //替换
 	gjson.AddModifier("basePath", basePath)                   //获取基本路径
-	gjson.AddModifier("addBasePathPrefix", addBasePathPrefix) //基本路径前增加前缀
+	gjson.AddModifier("basePathAddPrefix", basePathAddPrefix) //基本路径前增加前缀
 	gjson.AddModifier("eval", eval)                           //eval 脚本
 }
 
@@ -476,7 +476,7 @@ func basePath(jsonStr string, arg string) (out string) {
 }
 
 // 基础名称增加前缀(在实体名称重复时，增加实体名作为前缀的需求非常普遍,支持动态表达式计算前缀)
-func addBasePathPrefix(jsonStr string, arg string) (out string) {
+func basePathAddPrefix(jsonStr string, arg string) (out string) {
 	jsonStr = _trimQuotation(jsonStr)
 	befor, base := "", jsonStr
 	lastDotIndex := strings.LastIndex(jsonStr, ".")

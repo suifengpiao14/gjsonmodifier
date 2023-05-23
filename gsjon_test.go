@@ -195,16 +195,16 @@ func TestEval(t *testing.T) {
 	})
 }
 
-func TestAddBasePathPrefix(t *testing.T) {
+func TestBasePathAddPrefix(t *testing.T) {
 
 	data := `[{"fullname":"items[].id"},{"fullname":"items[].name"}]`
 	t.Run("string", func(t *testing.T) {
-		path := `#.fullname.@addBasePathPrefix:"user"`
+		path := `#.fullname.@basePathAddPrefix:"user"`
 		out := TestQuery(data, path)
 		fmt.Println(out)
 	})
 	t.Run("eval", func(t *testing.T) {
-		path := `#.fullname.@addBasePathPrefix:kvMap({"id":"user"},"info")`
+		path := `#.fullname.@basePathAddPrefix:kvMap({"id":"user"},"info")`
 		out := TestQuery(data, path)
 		fmt.Println(out)
 	})
