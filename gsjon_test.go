@@ -189,10 +189,17 @@ func TestEval(t *testing.T) {
 	})
 
 	t.Run("collection", func(t *testing.T) {
-		path := `#(fullname.@basePath.@eval:(collection.any(["id","name"],func(index,item){return value==item}))==true)#`
+		path := `#(fullname.@basePath.@eval:(collection.any(["id","name1"],func(index,item){return value==item})))#`
 		out := TestQuery(data, path)
 		fmt.Println(out)
 	})
+
+	t.Run("basePathAddPrefix", func(t *testing.T) {
+		path := `#.fullname.@basePath.@eval:inArray(["id"])?"user"+firstUpper(value):""`
+		out := TestQuery(data, path)
+		fmt.Println(out)
+	})
+
 }
 
 func TestBasePathAddPrefix(t *testing.T) {
@@ -205,6 +212,11 @@ func TestBasePathAddPrefix(t *testing.T) {
 	})
 	t.Run("eval", func(t *testing.T) {
 		path := `#.fullname.@basePathAddPrefix:kvMap({"id":"user"},"info")`
+		out := TestQuery(data, path)
+		fmt.Println(out)
+	})
+	t.Run("evalNoDefault", func(t *testing.T) {
+		path := `#.fullname.@basePathAddPrefix:kvMap({"id":"user"},"")`
 		out := TestQuery(data, path)
 		fmt.Println(out)
 	})

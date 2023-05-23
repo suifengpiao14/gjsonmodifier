@@ -419,6 +419,13 @@ func tengoEval(value string, expr string) (interface{}, error) {
 	    times := import("times")
 		collection := import("enum")
 		text := import("text")
+		firstUpper:=func(s){
+			if !s{
+				return s
+			}
+			out:=text.to_upper(value[0:1])+value[1:]
+			return out
+		}
 		inArray:= func(seq) {
 			for x in seq { 
 				if value==x{
