@@ -54,7 +54,8 @@ func init() {
 		return json
 	})
 	gjson.AddModifier("tonum", tonum)       // 列转换为数字,可用于字符串数字排序
-	gjson.AddModifier("tostring", tostring) // 列转换为数字,可用于字符串数字排序
+	gjson.AddModifier("tostring", tostring) // 列转换为字符
+	gjson.AddModifier("tobool", tobool)     // 列转换为boolean 值
 	gjson.AddModifier("combine", combine)
 
 	gjson.AddModifier("leftJoin", leftJoin)
@@ -251,11 +252,17 @@ func index(jsonStr, arg string) string {
 }
 
 func tonum(value string, arg string) (num string) {
-	num = strings.Trim(value, `'"`)
+	num = _trimQuotation(value)
 	if num == "" {
 		num = "0"
 	}
 	return num
+}
+func tobool(value string, arg string) (out string) {
+	bolStr := _trimQuotation(value)
+	bol := cast.ToBool(bolStr)
+	out = _formatOut(bol)
+	return out
 }
 
 func tostring(value string, arg string) (str string) {
