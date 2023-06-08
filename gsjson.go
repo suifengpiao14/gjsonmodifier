@@ -117,7 +117,7 @@ func leftJoin(jsonStr, arg string) string {
 	var selsLen = 0
 	var err error
 	ok := false
-	sels, _, ok = parseSubSelectors(arg)
+	sels, _, ok = ParseSubSelectors(arg)
 	if !ok {
 		return container
 	}
@@ -369,7 +369,7 @@ func replace(jsonStr string, arg string) (out string) {
 	return out
 }
 
-//_trimBracket 删除开始结尾的(),涉及脚本函数有用
+// _trimBracket 删除开始结尾的(),涉及脚本函数有用
 func _trimBracket(s string) (out string) {
 	s = strings.TrimSpace(s)
 	l := len(s)
@@ -379,7 +379,7 @@ func _trimBracket(s string) (out string) {
 	return s
 }
 
-//_trimBracket 删除开始结尾的""",gjson modifer 入参 jsonStr 字符串时，会增加"",所以入参需要剔除
+// _trimBracket 删除开始结尾的""",gjson modifer 入参 jsonStr 字符串时，会增加"",所以入参需要剔除
 func _trimQuotation(s string) (out string) {
 	s = strings.TrimSpace(s)
 	l := len(s)
@@ -535,7 +535,7 @@ func concatColumn(sep string, columns ...gjson.Result) (out []string) {
 func getParentPath(path string) string {
 	path = TrimSpaces(path)
 	if path[0] == '[' || path[0] == '{' {
-		subs, newPath, ok := parseSubSelectors(path)
+		subs, newPath, ok := ParseSubSelectors(path)
 		if !ok {
 			return path
 		}
@@ -588,11 +588,11 @@ type subSelector struct {
 }
 
 // copy from gjson
-// parseSubSelectors returns the subselectors belonging to a '[path1,path2]' or
+// ParseSubSelectors returns the subselectors belonging to a '[path1,path2]' or
 // '{"field1":path1,"field2":path2}' type subSelection. It's expected that the
 // first character in path is either '[' or '{', and has already been checked
 // prior to calling this function.
-func parseSubSelectors(path string) (sels []subSelector, out string, ok bool) {
+func ParseSubSelectors(path string) (sels []subSelector, out string, ok bool) {
 	modifier := 0
 	depth := 1
 	colon := 0

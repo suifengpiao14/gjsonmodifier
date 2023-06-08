@@ -239,3 +239,17 @@ func TestBasePathAddPrefix(t *testing.T) {
 	})
 
 }
+
+func TestParseSubSelectors(t *testing.T) {
+	t.Run("simple path", func(t *testing.T) {
+		path := `id.name`
+		sels, out, ok := ParseSubSelectors(path)
+		fmt.Println(sels, out, ok)
+	})
+	t.Run("complete path", func(t *testing.T) {
+		path := `{name:{id:id.name}|@group}|a`
+		sels, out, ok := ParseSubSelectors(path)
+		fmt.Println(sels, out, ok)
+	})
+
+}
