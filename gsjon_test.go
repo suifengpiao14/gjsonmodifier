@@ -253,3 +253,26 @@ func TestParseSubSelectors(t *testing.T) {
 	})
 
 }
+
+func TestGetAllPath(t *testing.T) {
+	data := `{"code":0,"services":[{"id":6,"servers":[]},{"id":1,"servers":[{"name":"dev","title":"开发环境"},{"name":"prod","title":"开发环境"}]}]}`
+	paths := GetAllPath(data)
+	fmt.Println(paths)
+}
+
+func TestInnerGroup(t *testing.T) {
+	t.Run("simple", func(t *testing.T) {
+		data := `{"name":[[],[[1,2],[3,4]]],"title":[[],["开发环境","正式环境"]]}`
+		expected := `[[],[{"name":"dev","title":"开发环境"},{"name":"prod","title":"正式环境"}]]`
+		_ = expected
+		out := groupPlus(data, "0")
+		fmt.Println(out)
+	})
+
+	t.Run("complexe 3", func(t *testing.T) {
+		path := `{code:code.@tostring,message:message.@tostring,services:{navs:{name:services.#.navs.#.name.@tostring,title:services.#.navs.#.title.@tostring,route:services.#.navs.#.route.@tostring,sort:services.#.navs.#.sort.@tostring}|@groupPlus:1,id:services.#.id.@tostring,name:services.#.name.@tostring,title:services.#.title.@tostring,document:services.#.document.@tostring,createdAt:services.#.createdAt.@tostring,updatedAt:services.#.updatedAt.@tostring,servers:{name:services.#.servers.#.name.@tostring,title:services.#.servers.#.title.@tostring}|@groupPlus:1}|@groupPlus:0,pagination:{index:pagination.index.@tostring,size:pagination.size.@tostring,total:pagination.total.@tostring}}`
+		data := `{"code":0,"message":"","services":[{"id":6,"name":"advertise1","title":"广告服务","document":"","createdAt":"2023-12-02 23:01:04","updatedAt":"2023-12-02 23:01:04","servers":[],"navs":[]},{"id":1,"name":"advertise","title":"广告服务","document":"","createdAt":"2023-11-25 22:32:16","updatedAt":"2023-11-25 22:32:16","servers":[{"name":"dev","title":"开发环境"},{"name":"prod","title":"开发环境"}],"navs":[{"name":"creative","title":"广告创意","route":"/advertise/creativeList","sort":99},{"name":"plan","title":"广告计划","route":"/advertise/planList","sort":98},{"name":"window","title":"橱窗","route":"/advertise/windowList","sort":97},{"name":"crativeList","title":"广告服务","route":"/creativeList","sort":4}]}],"pagination":{"index":0,"size":10,"total":2}}`
+		newData := gjson.Get(data, path).String()
+		fmt.Println(newData)
+	})
+}

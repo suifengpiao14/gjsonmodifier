@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"strconv"
 	"strings"
 	"unsafe"
 
@@ -57,6 +58,7 @@ func init() {
 	gjson.AddModifier("tostring", tostring) // 列转换为字符
 	gjson.AddModifier("tobool", tobool)     // 列转换为boolean 值
 	gjson.AddModifier("combine", combine)
+	gjson.AddModifier("groupPlus", groupPlus) // 官方版group 加强版,支持平铺到第几层
 
 	gjson.AddModifier("leftJoin", leftJoin)
 	gjson.AddModifier("index", index)
@@ -369,6 +371,54 @@ func replace(jsonStr string, arg string) (out string) {
 	return out
 }
 
+func groupPlus(json, arg string) string {
+	res := gjson.Parse(json)
+	if !res.IsObject() {
+		return ""
+	}
+
+	var all [][]byte
+	res.ForEach(func(key, value gjson.Result) bool {
+		if !value.IsArray() {
+			return true
+		}
+		var idx int
+		value.ForEach(func(_, value gjson.Result) bool {
+			if idx == len(all) {
+				all = append(all, []byte{})
+			}
+			all[idx] = append(all[idx], ("," + key.Raw + ":" + value.Raw)...)
+			idx++
+			return true
+		})
+		return true
+	})
+	level, _ := strconv.Atoi(arg)
+	var data []byte
+	data = append(data, '[')
+	for i, item := range all {
+
+		if i > 0 {
+			data = append(data, ',')
+		}
+		var raw []byte
+
+		raw = append(raw, '{')
+		raw = append(raw, item[1:]...)
+		raw = append(raw, '}')
+		subRaw := raw
+		rawLevel := level
+		if rawLevel > 0 {
+			rawLevel--
+			rawS := groupPlus(string(raw), strconv.Itoa(rawLevel))
+			subRaw = []byte(rawS)
+		}
+		data = append(data, subRaw...)
+	}
+	data = append(data, ']')
+	return string(data)
+}
+
 // _trimBracket 删除开始结尾的(),涉及脚本函数有用
 func _trimBracket(s string) (out string) {
 	s = strings.TrimSpace(s)
@@ -656,4 +706,30 @@ func ParseSubSelectors(path string) (sels []subSelector, out string, ok bool) {
 func TestQuery(data string, query string) (out string) {
 	out = gjson.Get(data, query).String()
 	return out
+}
+
+// GetAllPath 获取json中的所有路径
+func GetAllPath(jsonStr string) (paths []string) {
+	paths = make([]string, 0)
+	result := gjson.Parse(jsonStr)
+	allResult := getAllJsonResult(result)
+	for _, result := range allResult {
+		subPath := result.Path(jsonStr)
+		paths = append(paths, subPath)
+	}
+	return paths
+}
+
+func getAllJsonResult(result gjson.Result) (allResult []gjson.Result) {
+	allResult = make([]gjson.Result, 0)
+	result.ForEach(func(key, value gjson.Result) bool {
+		if !value.IsArray() && !value.IsObject() {
+			allResult = append(allResult, value)
+		} else {
+			subAllResult := getAllJsonResult(value)
+			allResult = append(allResult, subAllResult...)
+		}
+		return true
+	})
+	return
 }
