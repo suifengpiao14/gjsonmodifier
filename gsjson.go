@@ -1,6 +1,7 @@
 package gjsonmodifier
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -73,6 +74,8 @@ func init() {
 	gjson.AddModifier("eval", eval)                           //eval 脚本
 	gjson.AddModifier("camelCase", camelCase)                 //转驼峰 arg=lower时，首字母小写
 	gjson.AddModifier("snakeCase", snakeCase)                 //转蛇型
+	gjson.AddModifier("toArray", toArray)                     //map转数组
+	gjson.AddModifier("toMap", toMap)                         //数组转对象
 }
 
 func combine(jsonStr, arg string) string {
@@ -456,6 +459,44 @@ func camelCase(jsonStr string, arg string) (out string) {
 
 func snakeCase(jsonStr string, arg string) (out string) {
 	out = funcs.ToSnakeCase(jsonStr)
+	return out
+}
+
+func toArray(jsonStr string, arg string) (out string) {
+	result := gjson.Parse(jsonStr)
+	arr := make([]string, 0)
+	for identify, row := range result.Map() {
+		raw := strings.TrimSpace(row.Raw)
+		if arg != "" { // 增加key
+			raw = strings.TrimLeft(raw, "{")
+			raw = strings.TrimRight(raw, "}")
+			if raw == "" {
+				raw = fmt.Sprintf(`{"%s":"%s"}`, arg, identify)
+			} else {
+				raw = fmt.Sprintf(`{"%s":"%s",%s}`, arg, identify, raw)
+			}
+		}
+		arr = append(arr, raw)
+
+	}
+	out = fmt.Sprintf(`[%s]`, strings.Join(arr, ","))
+	return out
+}
+
+func toMap(jsonStr string, arg string) (out string) {
+	result := gjson.Parse(jsonStr)
+	var w bytes.Buffer
+	w.WriteString("{")
+	for i, row := range result.Array() {
+		if i > 0 {
+			w.WriteString(",")
+		}
+		key := row.Get(arg).String()
+		pair := fmt.Sprintf(`"%s":%s`, key, row.Raw)
+		w.WriteString(pair)
+	}
+	w.WriteString("}")
+	out = w.String()
 	return out
 }
 
