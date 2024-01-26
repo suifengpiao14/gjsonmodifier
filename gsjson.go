@@ -11,6 +11,7 @@ import (
 	"github.com/d5/tengo/v2/stdlib"
 	"github.com/pkg/errors"
 	"github.com/spf13/cast"
+	"github.com/suifengpiao14/funcs"
 	"github.com/tidwall/gjson"
 	"github.com/tidwall/sjson"
 )
@@ -68,6 +69,8 @@ func init() {
 	gjson.AddModifier("basePath", basePath)                   //获取基本路径
 	gjson.AddModifier("basePathAddPrefix", basePathAddPrefix) //基本路径前增加前缀
 	gjson.AddModifier("eval", eval)                           //eval 脚本
+	gjson.AddModifier("camelCase", camelCase)                 //转驼峰 arg=lower时，首字母小写
+	gjson.AddModifier("snakeCase", snakeCase)                 //转蛇型
 }
 
 func combine(jsonStr, arg string) string {
@@ -394,6 +397,20 @@ func _formatOut(i interface{}) (out string) {
 	if _, ok := i.(string); ok {
 		out = fmt.Sprintf(`"%s"`, out)
 	}
+	return out
+}
+
+func camelCase(jsonStr string, arg string) (out string) {
+	if arg == "lower" {
+		out = funcs.ToLowerCamel(jsonStr)
+		return
+	}
+	out = funcs.ToCamel(jsonStr)
+	return out
+}
+
+func snakeCase(jsonStr string, arg string) (out string) {
+	out = funcs.ToSnakeCase(jsonStr)
 	return out
 }
 
