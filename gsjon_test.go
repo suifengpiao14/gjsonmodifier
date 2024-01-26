@@ -140,6 +140,13 @@ func TestTostring(t *testing.T) {
 
 	})
 
+	t.Run("complex2", func(t *testing.T) {
+		value := `{"code":"0","message":"ok","items":[{"id":9,"advertiserID":"123","name":"新年豪礼","position":"123","did":120,"landingPage":"http://domain.com/active.html","beginAt":"2023-01-12 00:00:00","endAt":"2023-01-30 00:00:00","createdAt":"2023-05-31 18:09:02","updatedAt":"2023-05-31 18:09:02"},{"id":8,"advertiserID":"123","name":"新年豪礼","position":"123","did":120,"landingPage":"http://domain.com/active.html","beginAt":"2023-01-12 00:00:00","endAt":"2023-01-30 00:00:00","createdAt":"2023-05-31 18:07:10","updatedAt":"2023-05-31 18:07:10"},{"id":7,"advertiserID":"123","name":"新年豪礼","position":"123","did":120,"landingPage":"http://domain.com/active.html","beginAt":"2023-01-12 00:00:00","endAt":"2023-01-30 00:00:00","createdAt":"2023-05-31 18:06:34","updatedAt":"2023-05-31 18:06:34"},{"id":6,"advertiserID":"123","name":"新年豪礼","position":"123","did":120,"landingPage":"http://domain.com/active.html","beginAt":"2023-01-12 00:00:00","endAt":"2023-01-30 00:00:00","createdAt":"2023-05-31 16:53:12","updatedAt":"2023-05-31 16:53:12"},{"id":5,"advertiserID":"123","name":"新年豪礼","position":"123","did":120,"landingPage":"http://domain.com/active.html","beginAt":"2023-01-12 00:00:00","endAt":"2023-01-30 00:00:00","createdAt":"2023-05-31 14:26:20","updatedAt":"2023-05-31 14:26:20"},{"id":4,"advertiserID":"123","name":"新年豪礼","position":"123","did":120,"landingPage":"http://domain.com/active.html","beginAt":"2023-01-12 00:00:00","endAt":"2023-01-30 00:00:00","createdAt":"2023-05-31 14:18:50","updatedAt":"2023-05-31 14:18:50"},{"id":3,"advertiserID":"123","name":"新年豪礼","position":"123","did":120,"landingPage":"http://domain.com/active.html","beginAt":"2023-01-12 00:00:00","endAt":"2023-01-30 00:00:00","createdAt":"2023-05-31 14:18:08","updatedAt":"2023-05-31 14:18:08"},{"id":2,"advertiserID":"123","name":"新年豪礼","position":"123","did":120,"landingPage":"http://domain.com/active.html","beginAt":"2023-01-12 00:00:00","endAt":"2023-01-30 00:00:00","createdAt":"2023-05-31 14:16:08","updatedAt":"2023-05-31 14:16:08"}],"pagination":{"index":0,"size":10,"total":8}}`
+		path := "{out:{code:code.@tostring,message:message.@tostring,items:{id:items.#.id.@tostring,name:items.#.name.@tostring,position:items.#.position.@tostring,landingPage:items.#.landingPage.@tostring,updatedAt:items.#.updatedAt.@tostring,advertiserId:items.#.advertiserId.@tostring,did:items.#.did.@tostring,beginAt:items.#.beginAt.@tostring,endAt:items.#.endAt.@tostring,createdAt:items.#.createdAt.@tostring}|@group,pagination:{index:pagination.index.@tostring,size:pagination.size.@tostring,total:pagination.total.@tostring}}}"
+		result := gjson.Get(value, path).String()
+		fmt.Println(result)
+	})
+
 }
 
 func TestIn(t *testing.T) {
@@ -231,4 +238,41 @@ func TestBasePathAddPrefix(t *testing.T) {
 		fmt.Println(out)
 	})
 
+}
+
+func TestParseSubSelectors(t *testing.T) {
+	t.Run("simple path", func(t *testing.T) {
+		path := `id.name`
+		sels, out, ok := ParseSubSelectors(path)
+		fmt.Println(sels, out, ok)
+	})
+	t.Run("complete path", func(t *testing.T) {
+		path := `{name:{id:id.name}|@group}|a`
+		sels, out, ok := ParseSubSelectors(path)
+		fmt.Println(sels, out, ok)
+	})
+
+}
+
+func TestGetAllPath(t *testing.T) {
+	data := `{"code":0,"services":[{"id":6,"servers":[]},{"id":1,"servers":[{"name":"dev","title":"开发环境"},{"name":"prod","title":"开发环境"}]}]}`
+	paths := GetAllPath(data)
+	fmt.Println(paths)
+}
+
+func TestInnerGroup(t *testing.T) {
+	t.Run("simple", func(t *testing.T) {
+		data := `{"name":[[],[[1,2],[3,4]]],"title":[[],["开发环境","正式环境"]]}`
+		expected := `[[],[{"name":"dev","title":"开发环境"},{"name":"prod","title":"正式环境"}]]`
+		_ = expected
+		out := groupPlus(data, "0")
+		fmt.Println(out)
+	})
+
+	t.Run("complexe 3", func(t *testing.T) {
+		path := `{code:code.@tostring,message:message.@tostring,services:{navs:{name:services.#.navs.#.name.@tostring,title:services.#.navs.#.title.@tostring,route:services.#.navs.#.route.@tostring,sort:services.#.navs.#.sort.@tostring}|@groupPlus:1,id:services.#.id.@tostring,name:services.#.name.@tostring,title:services.#.title.@tostring,document:services.#.document.@tostring,createdAt:services.#.createdAt.@tostring,updatedAt:services.#.updatedAt.@tostring,servers:{name:services.#.servers.#.name.@tostring,title:services.#.servers.#.title.@tostring}|@groupPlus:1}|@groupPlus:0,pagination:{index:pagination.index.@tostring,size:pagination.size.@tostring,total:pagination.total.@tostring}}`
+		data := `{"code":0,"message":"","services":[{"id":6,"name":"advertise1","title":"广告服务","document":"","createdAt":"2023-12-02 23:01:04","updatedAt":"2023-12-02 23:01:04","servers":[],"navs":[]},{"id":1,"name":"advertise","title":"广告服务","document":"","createdAt":"2023-11-25 22:32:16","updatedAt":"2023-11-25 22:32:16","servers":[{"name":"dev","title":"开发环境"},{"name":"prod","title":"开发环境"}],"navs":[{"name":"creative","title":"广告创意","route":"/advertise/creativeList","sort":99},{"name":"plan","title":"广告计划","route":"/advertise/planList","sort":98},{"name":"window","title":"橱窗","route":"/advertise/windowList","sort":97},{"name":"crativeList","title":"广告服务","route":"/creativeList","sort":4}]}],"pagination":{"index":0,"size":10,"total":2}}`
+		newData := gjson.Get(data, path).String()
+		fmt.Println(newData)
+	})
 }

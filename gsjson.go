@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"strconv"
 	"strings"
 	"unsafe"
 
@@ -58,6 +59,7 @@ func init() {
 	gjson.AddModifier("tostring", tostring) // 列转换为字符
 	gjson.AddModifier("tobool", tobool)     // 列转换为boolean 值
 	gjson.AddModifier("combine", combine)
+	gjson.AddModifier("groupPlus", groupPlus) // 官方版group 加强版,支持平铺到第几层
 
 	gjson.AddModifier("leftJoin", leftJoin)
 	gjson.AddModifier("index", index)
@@ -120,7 +122,7 @@ func leftJoin(jsonStr, arg string) string {
 	var selsLen = 0
 	var err error
 	ok := false
-	sels, _, ok = parseSubSelectors(arg)
+	sels, _, ok = ParseSubSelectors(arg)
 	if !ok {
 		return container
 	}
@@ -136,8 +138,8 @@ func leftJoin(jsonStr, arg string) string {
 	for i := len(sels) - 1; i >= 0; i = i - 2 {
 		left := sels[i-1]
 		right := sels[i]
-		sub := leftJoin2Path(container, left.path, right.path)
-		leftRowGetPath := getParentPath(left.path)
+		sub := leftJoin2Path(container, left.Path, right.Path)
+		leftRowGetPath := getParentPath(left.Path)
 		leftRowSetPath := nameOfLast(leftRowGetPath) // 获取数组下标
 		container, err = sjson.SetRaw(container, leftRowSetPath, sub)
 		if err != nil {
@@ -372,7 +374,55 @@ func replace(jsonStr string, arg string) (out string) {
 	return out
 }
 
-//_trimBracket 删除开始结尾的(),涉及脚本函数有用
+func groupPlus(json, arg string) string {
+	res := gjson.Parse(json)
+	if !res.IsObject() {
+		return ""
+	}
+
+	var all [][]byte
+	res.ForEach(func(key, value gjson.Result) bool {
+		if !value.IsArray() {
+			return true
+		}
+		var idx int
+		value.ForEach(func(_, value gjson.Result) bool {
+			if idx == len(all) {
+				all = append(all, []byte{})
+			}
+			all[idx] = append(all[idx], ("," + key.Raw + ":" + value.Raw)...)
+			idx++
+			return true
+		})
+		return true
+	})
+	level, _ := strconv.Atoi(arg)
+	var data []byte
+	data = append(data, '[')
+	for i, item := range all {
+
+		if i > 0 {
+			data = append(data, ',')
+		}
+		var raw []byte
+
+		raw = append(raw, '{')
+		raw = append(raw, item[1:]...)
+		raw = append(raw, '}')
+		subRaw := raw
+		rawLevel := level
+		if rawLevel > 0 {
+			rawLevel--
+			rawS := groupPlus(string(raw), strconv.Itoa(rawLevel))
+			subRaw = []byte(rawS)
+		}
+		data = append(data, subRaw...)
+	}
+	data = append(data, ']')
+	return string(data)
+}
+
+// _trimBracket 删除开始结尾的(),涉及脚本函数有用
 func _trimBracket(s string) (out string) {
 	s = strings.TrimSpace(s)
 	l := len(s)
@@ -382,7 +432,7 @@ func _trimBracket(s string) (out string) {
 	return s
 }
 
-//_trimBracket 删除开始结尾的""",gjson modifer 入参 jsonStr 字符串时，会增加"",所以入参需要剔除
+// _trimBracket 删除开始结尾的""",gjson modifer 入参 jsonStr 字符串时，会增加"",所以入参需要剔除
 func _trimQuotation(s string) (out string) {
 	s = strings.TrimSpace(s)
 	l := len(s)
@@ -552,14 +602,14 @@ func concatColumn(sep string, columns ...gjson.Result) (out []string) {
 func getParentPath(path string) string {
 	path = TrimSpaces(path)
 	if path[0] == '[' || path[0] == '{' {
-		subs, newPath, ok := parseSubSelectors(path)
+		subs, newPath, ok := ParseSubSelectors(path)
 		if !ok {
 			return path
 		}
 		if len(subs) == 0 {
 			return newPath // todo 验证返回内容
 		}
-		path = subs[0].path // 取第一个路径计算父路径
+		path = subs[0].Path // 取第一个路径计算父路径
 	}
 	path = nameOfPrefix(path)
 	path = strings.Trim(path, ".#")
@@ -600,16 +650,16 @@ func nameOfPrefix(path string) string {
 }
 
 type subSelector struct {
-	name string
-	path string
+	Name string
+	Path string
 }
 
 // copy from gjson
-// parseSubSelectors returns the subselectors belonging to a '[path1,path2]' or
+// ParseSubSelectors returns the subselectors belonging to a '[path1,path2]' or
 // '{"field1":path1,"field2":path2}' type subSelection. It's expected that the
 // first character in path is either '[' or '{', and has already been checked
 // prior to calling this function.
-func parseSubSelectors(path string) (sels []subSelector, out string, ok bool) {
+func ParseSubSelectors(path string) (sels []subSelector, out string, ok bool) {
 	modifier := 0
 	depth := 1
 	colon := 0
@@ -618,10 +668,10 @@ func parseSubSelectors(path string) (sels []subSelector, out string, ok bool) {
 	pushSel := func() {
 		var sel subSelector
 		if colon == 0 {
-			sel.path = path[start:i]
+			sel.Path = path[start:i]
 		} else {
-			sel.name = path[start:colon]
-			sel.path = path[colon+1 : i]
+			sel.Name = path[start:colon]
+			sel.Path = path[colon+1 : i]
 		}
 		sels = append(sels, sel)
 		colon = 0
@@ -673,4 +723,30 @@ func parseSubSelectors(path string) (sels []subSelector, out string, ok bool) {
 func TestQuery(data string, query string) (out string) {
 	out = gjson.Get(data, query).String()
 	return out
+}
+
+// GetAllPath 获取json中的所有路径
+func GetAllPath(jsonStr string) (paths []string) {
+	paths = make([]string, 0)
+	result := gjson.Parse(jsonStr)
+	allResult := getAllJsonResult(result)
+	for _, result := range allResult {
+		subPath := result.Path(jsonStr)
+		paths = append(paths, subPath)
+	}
+	return paths
+}
+
+func getAllJsonResult(result gjson.Result) (allResult []gjson.Result) {
+	allResult = make([]gjson.Result, 0)
+	result.ForEach(func(key, value gjson.Result) bool {
+		if !value.IsArray() && !value.IsObject() {
+			allResult = append(allResult, value)
+		} else {
+			subAllResult := getAllJsonResult(value)
+			allResult = append(allResult, subAllResult...)
+		}
+		return true
+	})
+	return
 }
