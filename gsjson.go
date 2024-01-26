@@ -345,11 +345,6 @@ func in(jsonStr string, arg string) (out string) {
 	return ""
 }
 
-func orderBy(json string, arg string) (num string) {
-	num = strings.Trim(json, `'"`)
-	return num
-}
-
 func concat(jsonStr, arg string) string {
 	resArr := gjson.Parse(jsonStr).Array()
 	sep := "-"
