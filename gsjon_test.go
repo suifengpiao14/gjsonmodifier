@@ -286,8 +286,18 @@ func TestToArray(t *testing.T) {
 		fmt.Println(out)
 	})
 
-	t.Run("with arg", func(t *testing.T) {
+	t.Run("with arg string", func(t *testing.T) {
 		path := "db.export.export_template.@toArray:identity"
+		out := gjson.Get(data, path).String()
+		fmt.Println(out)
+	})
+	t.Run("with arg number", func(t *testing.T) {
+		path := "db.export.@toArray:1"
+		out := gjson.Get(data, path).String()
+		fmt.Println(out)
+	})
+	t.Run("with arg number and string", func(t *testing.T) {
+		path := "db.export.@toArray:1,key"
 		out := gjson.Get(data, path).String()
 		fmt.Println(out)
 	})

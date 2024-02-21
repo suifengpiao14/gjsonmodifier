@@ -465,19 +465,46 @@ func snakeCase(jsonStr string, arg string) (out string) {
 func toArray(jsonStr string, arg string) (out string) {
 	result := gjson.Parse(jsonStr)
 	arr := make([]string, 0)
-	for identify, row := range result.Map() {
+	level, key := 0, ""
+	argArr := strings.SplitN(arg, ",", 2)
+	var err error
+	switch len(argArr) {
+	case 2:
+		level, err = strconv.Atoi(argArr[0])
+		key = argArr[1]
+		if err != nil {
+			key = argArr[0]
+			level, _ = strconv.Atoi(argArr[1])
+		}
+	case 1:
+		level, err = strconv.Atoi(argArr[0])
+		if err != nil {
+			key = argArr[0]
+		}
+	}
+	m := result.Map()
+	for i := 0; i < level; i++ {
+		tmp := make(map[string]gjson.Result)
+		for identify, row := range m {
+			for subIdentify, subRow := range row.Map() {
+				tmp[fmt.Sprintf("%s.%s", identify, subIdentify)] = subRow
+			}
+		}
+		m = tmp
+	}
+
+	for identify, row := range m {
 		raw := strings.TrimSpace(row.Raw)
-		if arg != "" { // 增加key
+		if key != "" { // 增加key
 			raw = strings.TrimLeft(raw, "{")
 			raw = strings.TrimRight(raw, "}")
 			if raw == "" {
-				raw = fmt.Sprintf(`{"%s":"%s"}`, arg, identify)
+				raw = fmt.Sprintf(`{"%s":"%s"}`, key, identify)
 			} else {
-				raw = fmt.Sprintf(`{"%s":"%s",%s}`, arg, identify, raw)
+				raw = fmt.Sprintf(`{"%s":"%s",%s}`, key, identify, raw)
 			}
 		}
 		arr = append(arr, raw)
-
 	}
 	out = fmt.Sprintf(`[%s]`, strings.Join(arr, ","))
 	return out
