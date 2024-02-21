@@ -450,10 +450,10 @@ func _formatOut(i interface{}) (out string) {
 
 func camelCase(jsonStr string, arg string) (out string) {
 	arg = _trimQuotation(arg)
-	if arg == "lower" {
-		out = funcs.ToLowerCamel(jsonStr)
-	} else {
+	if arg == "upper" {
 		out = funcs.ToCamel(jsonStr)
+	} else {
+		out = funcs.ToLowerCamel(jsonStr)
 	}
 
 	out = _formatOut(out)
