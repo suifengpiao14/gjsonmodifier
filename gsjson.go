@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"sort"
 	"strconv"
 	"strings"
 	"unsafe"
@@ -466,9 +467,28 @@ func snakeCase(jsonStr string, arg string) (out string) {
 	return out
 }
 
+type sortImp struct {
+	Key  string `json:"key"`
+	Text string `json:"text"`
+}
+
+type sortImps []sortImp
+
+func (a sortImps) Len() int           { return len(a) }
+func (a sortImps) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
+func (a sortImps) Less(i, j int) bool { return a[i].Key < a[j].Key }
+
+func (sm sortImps) Array() (texts []string) {
+	texts = make([]string, 0)
+	for _, s := range sm {
+		texts = append(texts, s.Text)
+	}
+	return texts
+}
+
 func toArray(jsonStr string, arg string) (out string) {
 	result := gjson.Parse(jsonStr)
-	arr := make([]string, 0)
+
 	level, key := 0, ""
 	argArr := strings.SplitN(arg, ",", 2)
 	var err error
@@ -496,7 +516,7 @@ func toArray(jsonStr string, arg string) (out string) {
 		}
 		m = tmp
 	}
-
+	sm := make(sortImps, 0)
 	for identify, row := range m {
 		raw := strings.TrimSpace(row.Raw)
 		if key != "" { // 增加key
@@ -508,9 +528,14 @@ func toArray(jsonStr string, arg string) (out string) {
 				raw = fmt.Sprintf(`{"%s":"%s",%s}`, key, identify, raw)
 			}
 		}
-		arr = append(arr, raw)
+		sm = append(sm, sortImp{
+			Key:  identify,
+			Text: raw,
+		})
 	}
-	out = fmt.Sprintf(`[%s]`, strings.Join(arr, ","))
+	sort.Sort(sm)
+
+	out = fmt.Sprintf(`[%s]`, strings.Join(sm.Array(), ","))
 	return out
 }
 
