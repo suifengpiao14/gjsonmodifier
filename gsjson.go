@@ -2,7 +2,6 @@ package gjsonmodifier
 
 import (
 	"bytes"
-	"context"
 	"encoding/json"
 	"fmt"
 	"sort"
@@ -10,8 +9,6 @@ import (
 	"strings"
 	"unsafe"
 
-	"github.com/d5/tengo/v2"
-	"github.com/d5/tengo/v2/stdlib"
 	"github.com/pkg/errors"
 	"github.com/spf13/cast"
 	"github.com/suifengpiao14/funcs"
@@ -65,18 +62,16 @@ func init() {
 
 	gjson.AddModifier("leftJoin", leftJoin)
 	gjson.AddModifier("index", index)
-	gjson.AddModifier("concat", concat)                       //将二维数组按行合并成一维数组,可用于多列索引
-	gjson.AddModifier("unique", unique)                       //数组去重
-	gjson.AddModifier("multi", multi)                         //两数想成
-	gjson.AddModifier("in", in)                               //值在范围内
-	gjson.AddModifier("replace", replace)                     //替换
-	gjson.AddModifier("basePath", basePath)                   //获取基本路径
-	gjson.AddModifier("basePathAddPrefix", basePathAddPrefix) //基本路径前增加前缀
-	gjson.AddModifier("eval", eval)                           //eval 脚本
-	gjson.AddModifier("camelCase", camelCase)                 //转驼峰 arg=lower时，首字母小写
-	gjson.AddModifier("snakeCase", snakeCase)                 //转蛇型
-	gjson.AddModifier("toArray", toArray)                     //map转数组
-	gjson.AddModifier("toMap", toMap)                         //数组转对象
+	gjson.AddModifier("concat", concat)       //将二维数组按行合并成一维数组,可用于多列索引
+	gjson.AddModifier("unique", unique)       //数组去重
+	gjson.AddModifier("multi", multi)         //两数想成
+	gjson.AddModifier("in", in)               //值在范围内
+	gjson.AddModifier("replace", replace)     //替换
+	gjson.AddModifier("basePath", basePath)   //获取基本路径
+	gjson.AddModifier("camelCase", camelCase) //转驼峰 arg=lower时，首字母小写
+	gjson.AddModifier("snakeCase", snakeCase) //转蛇型
+	gjson.AddModifier("toArray", toArray)     //map转数组
+	gjson.AddModifier("toMap", toMap)         //数组转对象
 }
 
 func combine(jsonStr, arg string) string {
@@ -556,118 +551,12 @@ func toMap(jsonStr string, arg string) (out string) {
 	return out
 }
 
-func eval(jsonStr string, arg string) (out string) {
-	res, err := tengoEval(jsonStr, arg)
-	if err != nil {
-		panic(err)
-	}
-	bol, ok := res.(bool)
-	if ok && !bol { // 布尔类型，直接返回空字符串，达到false 效果
-		return out
-	}
-	out = _formatOut(res)
-	return out
-}
-
-func tengoEval(value string, expr string) (interface{}, error) {
-	value = _trimQuotation(value)
-	value = _trimBracket(value)
-	parameters := map[string]interface{}{
-		"value": value,
-	}
-	expr = _trimBracket(expr)
-	expr = strings.TrimSpace(expr)
-	if expr == "" {
-		return nil, fmt.Errorf("empty expression")
-	}
-	var code = `
-		fmt := import("fmt")
-	    times := import("times")
-		collection := import("enum")
-		text := import("text")
-		firstUpper:=func(s){
-			if !s{
-				return s
-			}
-			out:=text.to_upper(value[0:1])+value[1:]
-			return out
-		}
-		inArray:= func(seq) {
-			for x in seq { 
-				if value==x{
-					return true
-				}
-			}
-			return 
-		}
-		
-		notInArray:= func(seq) {
-			for x in seq { 
-				if value==x{
-					return 
-				}
-			}
-			return true
-		}
-		kvMap:=func(kv,default){
-			v:=kv[value]
-			if v!=undefined{
-				return v
-			}
-				return default
-		}
-		__res__ := (%s)
-	`
-	code = fmt.Sprintf(code, expr)
-
-	script := tengo.NewScript([]byte(code))
-	script.EnableFileImport(true)
-	mods := stdlib.GetModuleMap("times", "enum", "text", "fmt")
-	script.SetImports(mods)
-	for pk, pv := range parameters {
-		err := script.Add(pk, pv)
-		if err != nil {
-			return nil, fmt.Errorf("script add: %w", err)
-		}
-	}
-	compiled, err := script.RunContext(context.Background())
-	if err != nil {
-		return nil, fmt.Errorf("script run: %w", err)
-	}
-	return compiled.Get("__res__").Value(), nil
-
-}
-
 func basePath(jsonStr string, arg string) (out string) {
 	out = _trimQuotation(jsonStr)
 	lastDotIndex := strings.LastIndex(out, ".")
 	if lastDotIndex > -1 {
 		out = out[lastDotIndex+1:]
 	}
-	out = _formatOut(out)
-	return out
-}
-
-// 基础名称增加前缀(在实体名称重复时，增加实体名作为前缀的需求非常普遍,支持动态表达式计算前缀)
-func basePathAddPrefix(jsonStr string, arg string) (out string) {
-	jsonStr = _trimQuotation(jsonStr)
-	befor, base := "", jsonStr
-	lastDotIndex := strings.LastIndex(jsonStr, ".")
-	if lastDotIndex > -1 {
-		befor = jsonStr[0 : lastDotIndex+1]
-		base = jsonStr[lastDotIndex+1:]
-	}
-	prefix := strings.TrimSpace(arg)
-	prefixInterface, err := tengoEval(base, prefix)
-	if err != nil {
-		panic(err)
-	}
-	prefix = cast.ToString(prefixInterface)
-	if prefix != "" && base != "" {
-		base = fmt.Sprintf("%s%s", strings.ToUpper(base[0:1]), base[1:])
-	}
-
-	out = fmt.Sprintf("%s%s%s", befor, prefix, base)
 	out = _formatOut(out)
 	return out
 }
